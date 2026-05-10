@@ -1,9 +1,6 @@
 import express from "express";
-import dotenv from "dotenv";
 import router from "./routes/paypal.js";
 import cors from "cors";
-
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT ?? 3002;
