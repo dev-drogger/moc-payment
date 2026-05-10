@@ -11,19 +11,23 @@ const getAccessToken = async () => {
     return cachedToken;
   }
 
-  const response = await got.post(
-    `${process.env.PAYPAL_BASE_URL}/v1/oauth2/token`,
-    {
-      form: { grant_type: "client_credentials" },
-      username: process.env.PAYPAL_CLIENT_ID,
-      password: process.env.PAYPAL_CLIENT_SECRET,
-      responseType: "json",
-    },
-  );
-
-  cachedToken = response.body.access_token;
-  tokenExpiry = Date.now() + (response.body.expires_in - 60) * 1000;
-  return cachedToken;
+  try {
+    const response = await got.post(
+      `${process.env.PAYPAL_BASE_URL}/v1/oauth2/token`,
+      {
+        form: { grant_type: "client_credentials" },
+        username: process.env.PAYPAL_CLIENT_ID,
+        password: process.env.PAYPAL_CLIENT_SECRET,
+      },
+    );
+    const data = response.body;
+    const newAccessToken = JSON.parse(data);
+    cachedToken = newAccessToken.access_token;
+    tokenExpiry = Date.now() + (response.body.expires_in - 60) * 1000;
+    return cachedToken;
+  } catch (error) {
+    throw new Error(`PAYPAL_ACCESS_TOKEN_ERROR: ${error.message}`);
+  }
 };
 
 const checkAuthorization = (req, res, next) => {
@@ -39,7 +43,7 @@ const checkAuthorization = (req, res, next) => {
   next();
 };
 
-const createOrder = async (req, res) => {
+const createPayment = async (req, res) => {
   try {
     const accessToken = await getAccessToken();
 
@@ -74,12 +78,12 @@ const createOrder = async (req, res) => {
               experience_context: {
                 payment_method_preference: "IMMEDIATE_PAYMENT_REQUIRED",
                 payment_method_selected: "PAYPAL",
-                app_switch_context: {
-                  mobile_web: {
-                    return_url: `${process.env.PAYPAL_REDIRECT_BASE_URL}/completed`,
-                    cancel_url: `${process.env.PAYPAL_REDIRECT_BASE_URL}/canceled`,
-                  },
-                },
+                // app_switch_context: {
+                //   mobile_web: {
+                //     return_url: `${process.env.PAYPAL_REDIRECT_BASE_URL}/completed`,
+                //     cancel_url: `${process.env.PAYPAL_REDIRECT_BASE_URL}/canceled`,
+                //   },
+                // },
                 contact_preference: "NO_CONTACT_INFO",
                 brand_name: "Mayor of Clash",
                 shipping_preference: "NO_SHIPPING",
@@ -164,7 +168,7 @@ const capturePayment = async (req, res) => {
   }
 };
 
-router.post("/create-payment", checkAuthorization, createOrder);
+router.post("/create-payment", checkAuthorization, createPayment);
 router.post("/capture-payment/:orderId", checkAuthorization, capturePayment);
 
 export default router;

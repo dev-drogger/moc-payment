@@ -11,7 +11,8 @@ const PORT = process.env.PORT ?? 3002;
 app.use(express.json());
 app.use(
   cors({
-    origin: process.env.ALLOWED_ORIGINS?.split(",") || "*",
+    // origin: process.env.ALLOWED_ORIGINS?.split(",") || "*",
+    origin: "*",
     methods: ["GET", "POST"],
   }),
 );
@@ -22,5 +23,5 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => {
-  console.log("Payment server is running");
+  console.log(`Payment server is running on port ${PORT}`);
 });
