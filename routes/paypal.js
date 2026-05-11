@@ -24,7 +24,7 @@ const getAccessToken = async () => {
     const data = response.body;
     const newAccessToken = JSON.parse(data);
     cachedToken = newAccessToken.access_token;
-    tokenExpiry = Date.now() + (response.body.expires_in - 60) * 1000;
+    tokenExpiry = Date.now() + (newAccessToken.expires_in - 60) * 1000;
     return cachedToken;
   } catch (error) {
     console.error("Error fetching access token from PayPal", error);
