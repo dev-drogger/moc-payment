@@ -20,12 +20,14 @@ const getAccessToken = async () => {
         password: process.env.PAYPAL_CLIENT_SECRET,
       },
     );
+    console.log("Received response from PayPal token endpoint", response.body);
     const data = response.body;
     const newAccessToken = JSON.parse(data);
     cachedToken = newAccessToken.access_token;
     tokenExpiry = Date.now() + (response.body.expires_in - 60) * 1000;
     return cachedToken;
   } catch (error) {
+    console.error("Error fetching access token from PayPal", error);
     throw new Error(`PAYPAL_ACCESS_TOKEN_ERROR: ${error.message}`);
   }
 };
@@ -34,6 +36,7 @@ const checkAuthorization = (req, res, next) => {
   const paymentProxySecret = req.headers["payment-proxy-secret"];
 
   if (paymentProxySecret !== process.env.PAYMENT_PROXY_SECRET) {
+    console.error("Unauthorized access attempt");
     return res.status(401).json({
       type: "UNAUTHORIZED",
       error: "Unauthorized",
@@ -46,6 +49,7 @@ const checkAuthorization = (req, res, next) => {
 const createPayment = async (req, res) => {
   try {
     const accessToken = await getAccessToken();
+    console.log("Using access token:", accessToken);
 
     if (!accessToken) {
       return res.status(500).json({
@@ -102,6 +106,7 @@ const createPayment = async (req, res) => {
     const orderId = response.body.id;
     return res.status(200).json({ orderId: orderId });
   } catch (error) {
+    console.error("Error creating PayPal order", error);
     if (error instanceof HTTPError) {
       return res.status(error.response.statusCode).json({
         type: "PAYPAL_ERROR",
@@ -155,6 +160,7 @@ const capturePayment = async (req, res) => {
     }
     return res.status(200).json({ ok: true, message: "paid" });
   } catch (error) {
+    console.error("Error capturing PayPal payment", error);
     if (error instanceof HTTPError) {
       return res.status(error.response.statusCode).json({
         type: "PAYPAL_ERROR",
