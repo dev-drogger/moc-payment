@@ -2,13 +2,15 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "nodemon --watch . server.js"
+    "start": "nodemon --watch . server.js",
+    "prod": "pm2 start ecosystem.config.cjs"
   },
   "dependencies": {
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "got": "^15.0.3",
+    "morgan": "^1.10.1",
     "pm2": "^7.0.1"
   },
   "devDependencies": {

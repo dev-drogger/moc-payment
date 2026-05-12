@@ -7,6 +7,19 @@ let cachedToken = null;
 let tokenExpiry = null;
 
 const getAccessToken = async () => {
+  console.log("Verifying ENV variables for PayPal API access");
+  console.log(
+    "PAYPAL_CLIENT_ID:",
+    process.env.PAYPAL_CLIENT_ID ? "set" : "not set",
+  );
+  console.log(
+    "PAYPAL_CLIENT_SECRET:",
+    process.env.PAYPAL_CLIENT_SECRET ? "set" : "not set",
+  );
+  console.log(
+    "PAYPAL_BASE_URL:",
+    process.env.PAYPAL_BASE_URL ? "set" : "not set",
+  );
   if (cachedToken && tokenExpiry && Date.now() < tokenExpiry) {
     return cachedToken;
   }
@@ -33,7 +46,9 @@ const getAccessToken = async () => {
 };
 
 const checkAuthorization = (req, res, next) => {
+  console.log("Checking authorization for incoming request");
   const paymentProxySecret = req.headers["payment-proxy-secret"];
+  console.log("Received payment-proxy-secret:", paymentProxySecret);
 
   if (paymentProxySecret !== process.env.PAYMENT_PROXY_SECRET) {
     console.error("Unauthorized access attempt");
@@ -47,6 +62,7 @@ const checkAuthorization = (req, res, next) => {
 };
 
 const createPayment = async (req, res) => {
+  console.log("Creating PayPal payment");
   try {
     const accessToken = await getAccessToken();
     console.log("Using access token:", accessToken);
@@ -121,9 +137,10 @@ const createPayment = async (req, res) => {
 };
 
 const capturePayment = async (req, res) => {
+  console.log("Capturing PayPal payment");
   try {
     const accessToken = await getAccessToken();
-
+    console.log("Using access token:", accessToken);
     if (!accessToken) {
       return res.status(500).json({
         type: "PAYPAL_ACCESS_TOKEN_ERROR",
