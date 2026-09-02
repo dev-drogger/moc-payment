@@ -7,22 +7,15 @@ const app = express();
 const PORT = process.env.PORT ?? 3002;
 
 app.use(express.json());
-app.use(morgan("dev"));
+//app.use(morgan("dev"));
 app.use((err, req, res, next) => {
-  console.log("=== Incoming Request ===");
-  console.log("Method:", req.method);
-  console.log("URL:", req.originalUrl);
-  console.log("Headers:", req.headers);
-  console.log("Body:", req.body);
-  console.log("========================");
   console.error(err);
   res.status(500).json({ error: "Internal server error" });
   next();
 });
 app.use(
   cors({
-    // origin: process.env.ALLOWED_ORIGINS?.split(",") || "*",
-    origin: "*",
+    origin: process.env.ALLOWED_ORIGINS?.split(","),
     methods: ["GET", "POST"],
   }),
 );

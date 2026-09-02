@@ -7,19 +7,6 @@ let cachedToken = null;
 let tokenExpiry = null;
 
 const getAccessToken = async () => {
-  console.log("Verifying ENV variables for PayPal API access");
-  console.log(
-    "PAYPAL_CLIENT_ID:",
-    process.env.PAYPAL_CLIENT_ID ? "set" : "not set",
-  );
-  console.log(
-    "PAYPAL_CLIENT_SECRET:",
-    process.env.PAYPAL_CLIENT_SECRET ? "set" : "not set",
-  );
-  console.log(
-    "PAYPAL_BASE_URL:",
-    process.env.PAYPAL_BASE_URL ? "set" : "not set",
-  );
   if (cachedToken && tokenExpiry && Date.now() < tokenExpiry) {
     return cachedToken;
   }
@@ -33,7 +20,6 @@ const getAccessToken = async () => {
         password: process.env.PAYPAL_CLIENT_SECRET,
       },
     );
-    console.log("Received response from PayPal token endpoint", response.body);
     const data = response.body;
     const newAccessToken = JSON.parse(data);
     cachedToken = newAccessToken.access_token;
@@ -46,9 +32,7 @@ const getAccessToken = async () => {
 };
 
 const checkAuthorization = (req, res, next) => {
-  console.log("Checking authorization for incoming request");
   const paymentProxySecret = req.headers["payment-proxy-secret"];
-  console.log("Received payment-proxy-secret:", paymentProxySecret);
 
   if (paymentProxySecret !== process.env.PAYMENT_PROXY_SECRET) {
     console.error("Unauthorized access attempt");
@@ -62,10 +46,8 @@ const checkAuthorization = (req, res, next) => {
 };
 
 const createPayment = async (req, res) => {
-  console.log("Creating PayPal payment");
   try {
     const accessToken = await getAccessToken();
-    console.log("Using access token:", accessToken);
 
     if (!accessToken) {
       return res.status(500).json({
@@ -85,11 +67,11 @@ const createPayment = async (req, res) => {
           intent: "CAPTURE",
           purchase_units: [
             {
-              name: "Remove Ads",
-              description: "Remove ads and enjoy ad-free experience",
+              name: "Remove Ads - Mayor of Clash",
+              description: "Remove ads and enjoy ad-free experience while using Mayor of Clash",
               amount: {
                 currency_code: "USD",
-                value: "6.66",
+                value: "4.44",
               },
             },
           ],
@@ -137,10 +119,8 @@ const createPayment = async (req, res) => {
 };
 
 const capturePayment = async (req, res) => {
-  console.log("Capturing PayPal payment");
   try {
     const accessToken = await getAccessToken();
-    console.log("Using access token:", accessToken);
     if (!accessToken) {
       return res.status(500).json({
         type: "PAYPAL_ACCESS_TOKEN_ERROR",
@@ -175,7 +155,16 @@ const capturePayment = async (req, res) => {
         error: "Payment incomplete or failed",
       });
     }
-    return res.status(200).json({ ok: true, message: "paid" });
+     const returnedData = {
+      orderId: paymentData.id,
+      customerId: paymentData.payer.payer_id,
+      customerName: `${paymentData.payer.name.given_name} ${paymentData.payer.name.surname}`,
+      customerEmail: paymentData.payer.email_address,
+      transactionDate:
+        paymentData.purchase_units[0].payments.captures[0].update_time,
+      status: paymentData.status,
+    };
+    return res.status(200).json({ ok: true, data: returnedData });
   } catch (error) {
     console.error("Error capturing PayPal payment", error);
     if (error instanceof HTTPError) {
